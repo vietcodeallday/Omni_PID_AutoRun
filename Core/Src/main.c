@@ -72,7 +72,7 @@ osThreadId_t AutoRunHandle;
 const osThreadAttr_t AutoRun_attributes = {
   .name = "AutoRun",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for WitMotion */
 osThreadId_t WitMotionHandle;
@@ -135,15 +135,6 @@ uint8_t Dis;
 
 uint8_t count=0;
 
-void pid_config(void){
-	pid.Kp=0.3;
-	pid.Ki=0.2;
-	pid.Kd=0.005;
-	pid.target_val_1=V1;
-	pid.target_val_2=V2;
-	pid.target_val_3=V3;
-	PID_init(&pid);
-}
 /**---UART6 Interrupt--*/
 //#ifdef __GNUC__
 //#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
@@ -201,9 +192,7 @@ int main(void)
   	__HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_3, 100); //motor 1
   	__HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_4, 100); //motor 2
   	__HAL_TIM_SetCompare(&htim9, TIM_CHANNEL_1, 100); //motor 3
-//  	HAL_GPIO_WritePin(DIRECTION_1_GPIO_Port, DIRECTION_1_Pin, GPIO_PIN_SET);
-//  	HAL_GPIO_WritePin(DIRECTION_2_GPIO_Port, DIRECTION_2_Pin, GPIO_PIN_SET);
-//  	HAL_GPIO_WritePin(DIRECTION_3_GPIO_Port, DIRECTION_3_Pin, GPIO_PIN_SET);
+
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
     HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
@@ -1145,6 +1134,7 @@ void StartAxisXYDesire(void *argument)
 		X_real[0]=0;
 		Y_real[0]=0;
 
+		pause = false;
 		idx=1; idx_real=0;
 		repeat=false;
 		break;
@@ -1163,7 +1153,7 @@ void StartAxisXYDesire(void *argument)
 static uint32_t updateTimeToRun=0;
 static uint8_t flag_dr=donot;
 
-void Caculate_Run(uint32_t timeToRun, uint16_t angle){
+void Caculate_Run(){
 	if(restart){
 		Robot_Move(0, 0, 0);
 		Run=NO;
@@ -1194,16 +1184,16 @@ void StartAutoRun(void *argument)
   {
 	switch(Run){
 	case FORWARD:
-		Caculate_Run(timeToRun, Angle_FORWARD);
+		Caculate_Run();
 		break;
 	case BACKWARD:
-		Caculate_Run(timeToRun, Angle_FORWARD);
+		Caculate_Run();
 		break;
 	case RIGHT:
-		Caculate_Run(timeToRun, Angle_FORWARD);
+		Caculate_Run();
 		break;
 	case LEFT:
-		Caculate_Run(timeToRun, Angle_FORWARD);
+		Caculate_Run();
 		break;
 	case NO:
 		runDone=true;
@@ -1223,6 +1213,7 @@ void StartAutoRun(void *argument)
 * @retval None
 */
 int16_t angle_desire=0;
+int16_t diff;
 /* USER CODE END Header_StartTaskWit */
 void StartTaskWit(void *argument)
 {
@@ -1247,11 +1238,19 @@ void StartTaskWit(void *argument)
 		break;
 	}
 //	UARTprintf("angle z: %d \r\n",angle_real.z);
-	int16_t diff=fabs(angle_desire - angle_real.z);
+	if(Run==BACKWARD){
+		if (angle_real.z >= 0) diff=fabs(179 - angle_real.z);
+		else diff=fabs(-179 - angle_real.z);
+	}
+	else diff=fabs(angle_desire - angle_real.z);
+
 	if(pause==true || runDone == true){
 		flag_dr=no;
 	}
-	else if(angle_real.z >= angle_desire-tolerance && angle_real.z <= angle_desire+tolerance){
+	else if(Run==BACKWARD && ((angle_real.z >= 179 - tolerance) || (angle_real.z <= -179 + tolerance))){
+		flag_dr=donot;
+	}
+	else if(Run!=BACKWARD && angle_real.z >= angle_desire-tolerance && angle_real.z <= angle_desire+tolerance){
 		flag_dr=donot;
 	}
 	else if(angle_real.z > angle_desire+tolerance ){

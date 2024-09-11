@@ -21,6 +21,15 @@ double err
 ,pre_actual_val_1=0
 ,pre_actual_val_2=0
 ,pre_actual_val_3=0;
+void pid_config(void){
+	pid.Kp=0.3;
+	pid.Ki=0.2;
+	pid.Kd=0.005;
+	pid.target_val_1=V1;
+	pid.target_val_2=V2;
+	pid.target_val_3=V3;
+	PID_init(&pid);
+}
 void PID_init(PID_Param_t *par){
 	Kp=par->Kp;
 	Ki=par->Ki;

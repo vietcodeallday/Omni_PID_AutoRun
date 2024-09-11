@@ -40,7 +40,6 @@ double get_rpm(int motor){
 		}
 		CountLoop(cnt, flag_rot);
 	}
-//	UARTprintf("loop: %d, \t cnt: %d \r\n",loop,cnt);
 	rpm= ((double)loop*65000+((flag_rot)?(double)(65535-cnt):(double)cnt))/47000*100*60;
 	return rpm;
 }

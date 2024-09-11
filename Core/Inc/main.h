@@ -117,7 +117,7 @@ void Error_Handler(void);
 #define true 1
 #define false 0
 #define N 500
-#define speed 600
+#define speed 3700
 #define ticktak 10
 #define delay_trans portMAX_DELAY
 
@@ -127,7 +127,7 @@ void Error_Handler(void);
 #define no 3
 
 
-#define tolerance 5
+#define tolerance 1
 #define Angle_FORWARD 60
 #define Angle_BACKWARD 240
 #define Angle_RIGHT 330
